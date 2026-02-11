@@ -1,0 +1,7 @@
+{
+  "name": "l2gl/exam-management",
+  "description": "Mini projet gestion académique - L2 GL",
+  "require": {
+    "setasign/fpdf": "^1.8"
+  }
+}
