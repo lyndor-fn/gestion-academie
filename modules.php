@@ -1,13 +1,19 @@
 <?php
-require_once __DIR__.'/functions.php';
-require_once __DIR__.'/layout.php';
-require_once __DIR__.'/auth.php';
+require_once __DIR__.'/includes/functions.php';
+require_once __DIR__.'/includes/layout.php';
+require_once __DIR__.'/includes/auth.php';
 require_login();
 
-if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['code']) && !empty($_POST['name'])){
+if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['name']) && !empty($_POST['class_id'])){
   if(!verify_csrf($_POST['csrf_token'] ?? '')){ die('CSRF token invalide'); }
-  addModule($_POST['code'], $_POST['name']); 
-  header('Location: modules.php'); 
+  $module_code = generateModuleCode((int)$_POST['class_id']);
+  if ($module_code) {
+    $module_id = addModule($module_code, $_POST['name']); 
+    if ($module_id) {
+      assignModuleToClass($_POST['class_id'], $module_id);
+    }
+  }
+  header('Location: modules.php?class_id='.$_POST['class_id']); 
   exit;
 }
 
@@ -34,10 +40,17 @@ $all_modules = $pdo->query('SELECT * FROM modules ORDER BY code')->fetchAll(PDO:
   <div class="card-body">
     <h5 class="card-title mb-3"><i class="bi bi-book-half"></i> Créer un nouveau module</h5>
     <form method="post" class="row g-2">
-      <div class="col-md-2">
-        <input type="text" name="code" class="form-control form-control-sm" placeholder="Code" required>
+      <div class="col-md-4">
+        <select name="class_id" class="form-select form-select-sm" required>
+          <option value="">-- Sélectionnez une classe --</option>
+          <?php foreach(getClassesByLevel() as $c): ?>
+            <option value="<?= $c['id'] ?>" <?= ($class && $class['id']==$c['id']) ? 'selected' : '' ?>>
+              <?= e($c['level_name'] . ' - ' . $c['name']) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-5">
         <input type="text" name="name" class="form-control form-control-sm" placeholder="Nom du module" required>
       </div>
       <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
@@ -47,6 +60,9 @@ $all_modules = $pdo->query('SELECT * FROM modules ORDER BY code')->fetchAll(PDO:
         </button>
       </div>
     </form>
+    <?php if($class): ?>
+      <small class="text-muted">Code généré automatiquement: <?= e(generateModuleCode($class['id'])) ?></small>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -83,10 +99,10 @@ $all_modules = $pdo->query('SELECT * FROM modules ORDER BY code')->fetchAll(PDO:
                     <strong><?= e($m['name']) ?></strong>
                   </td>
                   <td class="text-end">
-                    <a href="edit_module.php?id=<?= $m['id'] ?>" class="btn table-action-btn btn-sm btn-outline-warning">
+                    <a href="module_action.php?id=<?= $m['id'] ?>" class="btn table-action-btn btn-sm btn-outline-warning">
                       <i class="bi bi-pencil"></i>
                     </a>
-                    <a href="delete_module.php?id=<?= $m['id'] ?>" class="btn table-action-btn btn-sm btn-outline-danger">
+                    <a href="module_action.php?id=<?= $m['id'] ?>&action=delete" class="btn table-action-btn btn-sm btn-outline-danger">
                       <i class="bi bi-trash"></i>
                     </a>
                   </td>
@@ -136,3 +152,4 @@ $all_modules = $pdo->query('SELECT * FROM modules ORDER BY code')->fetchAll(PDO:
 <?php endif; ?>
 
 <?php end_layout(); ?>
+

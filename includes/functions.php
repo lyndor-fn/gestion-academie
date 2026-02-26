@@ -31,8 +31,22 @@ function getClassesByLevel(){ global $pdo; $stmt = $pdo->query('SELECT c.*, l.na
 
 function getClassById($id){ global $pdo; $stmt=$pdo->prepare('SELECT * FROM classes WHERE id=?'); $stmt->execute([$id]); return $stmt->fetch(PDO::FETCH_ASSOC); }
 
+function getClassWithLevel($id){
+    global $pdo;
+    $stmt = $pdo->prepare('SELECT c.*, l.name as level_name FROM classes c JOIN levels l ON c.level_id=l.id WHERE c.id=?');
+    $stmt->execute([$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
 // MODULES
-function addModule($code,$name){ global $pdo; $stmt=$pdo->prepare('INSERT INTO modules (code,name) VALUES (?,?)'); return $stmt->execute([$code,$name]); }
+function addModule($code,$name){
+    global $pdo;
+    $stmt = $pdo->prepare('INSERT INTO modules (code,name) VALUES (?,?)');
+    if ($stmt->execute([$code,$name])) {
+        return (int)$pdo->lastInsertId();
+    }
+    return false;
+}
 
 function assignModuleToClass($class_id,$module_id){ global $pdo; $stmt=$pdo->prepare('INSERT INTO class_modules (class_id,module_id) VALUES (?,?)'); return $stmt->execute([$class_id,$module_id]); }
 
@@ -47,6 +61,52 @@ function getStudentsByClass($class_id){ global $pdo; $stmt=$pdo->prepare('SELECT
 
 function getStudentByMatricule($matricule){ global $pdo; $stmt=$pdo->prepare('SELECT * FROM students WHERE matricule=?'); $stmt->execute([$matricule]); return $stmt->fetch(PDO::FETCH_ASSOC); }
 
+function generateStudentMatricule($class_id){
+    $class = getClassWithLevel($class_id);
+    if (!$class) return null;
+
+    $level_code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $class['level_name']));
+    $class_code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $class['name']));
+    $year = date('Y');
+    $prefix = $level_code.$class_code.'-'.$year.'-';
+
+    $seq = 1;
+    do {
+        $matricule = $prefix.str_pad((string)$seq, 2, '0', STR_PAD_LEFT);
+        $exists = getStudentByMatricule($matricule);
+        $seq++;
+    } while ($exists);
+
+    return $matricule;
+}
+
+function generateModuleCode($class_id){
+    global $pdo;
+    $class = getClassWithLevel($class_id);
+    if (!$class) return null;
+
+    $level_code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $class['level_name']));
+    $class_code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $class['name']));
+    $prefix = $level_code.$class_code.'-';
+
+    $stmt = $pdo->prepare('SELECT code FROM modules WHERE code LIKE ?');
+    $stmt->execute([$prefix.'%']);
+    $codes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $max = 0;
+    foreach ($codes as $code) {
+        $parts = explode('-', $code);
+        $last = end($parts);
+        if (ctype_digit($last)) {
+            $num = (int)$last;
+            if ($num > $max) $max = $num;
+        }
+    }
+
+    $next = $max + 1;
+    return $prefix.str_pad((string)$next, 2, '0', STR_PAD_LEFT);
+}
+
 // EVALUATIONS
 function addEvaluation($student_id,$module_id,$type,$score,$date=null){ global $pdo; $stmt=$pdo->prepare('INSERT INTO evaluations (student_id,module_id,type,score,date_eval) VALUES (?,?,?,?,?)'); return $stmt->execute([$student_id,$module_id,$type,$score,$date ?: date('Y-m-d')]); }
 
@@ -59,16 +119,21 @@ function getEvaluationsByStudent($student_id){ global $pdo; $stmt=$pdo->prepare(
 // CALCULS
 function calculateStudentAverage($student_id){ global $pdo; $stmt=$pdo->prepare("SELECT AVG(score) FROM evaluations WHERE student_id=? AND type IN ('DEVOIR','EXAM')"); $stmt->execute([$student_id]); $avg=$stmt->fetchColumn(); return $avg!==false ? (float)$avg : null; }
 
-function calculateClassAverage($class_id){ global $pdo; global $pdo; $stmt=$pdo->prepare('SELECT AVG(e.score) FROM evaluations e JOIN students s ON e.student_id=s.id WHERE s.class_id=? AND e.type IN (\'DEVOIR\',\'EXAM\')'); $stmt->execute([$class_id]); $avg=$stmt->fetchColumn(); return $avg!==false ? (float)$avg : null; }
+function calculateClassAverage($class_id){ global $pdo; $stmt=$pdo->prepare('SELECT AVG(e.score) FROM evaluations e JOIN students s ON e.student_id=s.id WHERE s.class_id=? AND e.type IN (\'DEVOIR\',\'EXAM\')'); $stmt->execute([$class_id]); $avg=$stmt->fetchColumn(); return $avg!==false ? (float)$avg : null; }
 
 function bestStudentInClass($class_id){ global $pdo; $stmt=$pdo->prepare('SELECT s.*, AVG(e.score) as avg_score FROM students s JOIN evaluations e ON e.student_id=s.id WHERE s.class_id=? AND e.type IN (\'DEVOIR\',\'EXAM\') GROUP BY s.id ORDER BY avg_score DESC LIMIT 1'); $stmt->execute([$class_id]); return $stmt->fetch(PDO::FETCH_ASSOC); }
-
-function bestStudentInLevel($level_id){ global $pdo; $stmt=$pdo->prepare('SELECT s.*, AVG(e.score) as avg_score FROM students s JOIN classes c ON s.class_id=c.id JOIN evaluations e ON e.student_id=s.id WHERE c.level_id=? AND e.type IN (\'DEVOIR\',\'EXAM\') GROUP BY s.id ORDER BY avg_score DESC LIMIT 1'); $stmt->execute([$level_id]); return $stmt->fetch(PDO::FETCH_ASSOC); }
 
 function studentsAboveClassAverage($class_id){ global $pdo; $classAvg = calculateClassAverage($class_id); if($classAvg===null) return []; $stmt=$pdo->prepare('SELECT s.*, AVG(e.score) as avg_score FROM students s JOIN evaluations e ON e.student_id=s.id WHERE s.class_id=? AND e.type IN (\'DEVOIR\',\'EXAM\') GROUP BY s.id HAVING avg_score > ?'); $stmt->execute([$class_id,$classAvg]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
 
 // DASHBOARD / STATS
-function stats(){ global $pdo; $r=[]; $r['nb_levels']=$pdo->query('SELECT COUNT(*) FROM levels')->fetchColumn(); $r['nb_classes']=$pdo->query('SELECT COUNT(*) FROM classes')->fetchColumn(); $r['nb_students']=$pdo->query('SELECT COUNT(*) FROM students')->fetchColumn(); return $r; }
+function stats(){
+    global $pdo;
+    $r = [];
+    $r['nb_levels'] = $pdo->query('SELECT COUNT(*) FROM levels')->fetchColumn();
+    $r['nb_classes'] = $pdo->query('SELECT COUNT(*) FROM classes')->fetchColumn();
+    $r['nb_students'] = $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn();
+    return $r;
+}
 
 function studentStatus($student_id){ $avg = calculateStudentAverage($student_id); if($avg===null) return 'N/A'; if($avg>=10) return 'Admis'; if($avg>=5) return 'Ajourné'; return 'Exclus'; }
 

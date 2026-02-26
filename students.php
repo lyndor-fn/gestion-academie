@@ -1,8 +1,8 @@
 <?php
-require_once __DIR__.'/functions.php';
-require_once __DIR__.'/auth.php';
+require_once __DIR__.'/includes/functions.php';
+require_once __DIR__.'/includes/auth.php';
 require_login();
-require_once __DIR__.'/layout.php';
+require_once __DIR__.'/includes/layout.php';
 
 $levels = getLevels();
 $classes = getClassesByLevel();
@@ -15,9 +15,12 @@ if(isset($_GET['class_id'])) {
 }
 
 // Traiter l'ajout d'étudiant
-if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['matricule']) && !empty($_POST['firstname']) && !empty($_POST['lastname']) && !empty($_POST['class_id'])){
+if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['firstname']) && !empty($_POST['lastname']) && !empty($_POST['class_id'])){
     if(!verify_csrf($_POST['csrf_token'] ?? '')){ die('CSRF token invalide'); }
-    addStudent($_POST['matricule'], $_POST['firstname'], $_POST['lastname'], $_POST['class_id']);
+    $matricule = generateStudentMatricule((int)$_POST['class_id']);
+    if ($matricule) {
+        addStudent($matricule, $_POST['firstname'], $_POST['lastname'], $_POST['class_id']);
+    }
     header('Location: students.php?class_id='.$_POST['class_id']);
     exit;
 }
@@ -60,6 +63,7 @@ start_layout('Gestion des Étudiants', 'students');
 
 <!-- Formulaire d'ajout d'étudiant -->
 <?php if($class): ?>
+    <?php $next_matricule = generateStudentMatricule($class['id']); ?>
     <div class="card mb-4">
         <div class="card-header">
             <h5 class="card-title mb-0">
@@ -70,7 +74,8 @@ start_layout('Gestion des Étudiants', 'students');
             <form method="post" class="form-group-row">
                 <div class="form-group">
                     <label class="form-label required">Matricule</label>
-                    <input type="text" name="matricule" class="form-control" placeholder="EX: MAT001" required>
+                    <input type="text" class="form-control" value="<?php echo e($next_matricule ?? ''); ?>" readonly>
+                    <small class="text-muted">Généré automatiquement.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label required">Prénom</label>
@@ -138,10 +143,10 @@ start_layout('Gestion des Étudiants', 'students');
                                         <a href="evaluations.php?matricule=<?php echo urlencode($s['matricule']); ?>" class="table-action-btn" title="Notes">
                                             <i class="bi bi-graph-up"></i>
                                         </a>
-                                        <a href="edit_student.php?id=<?php echo $s['id']; ?>" class="table-action-btn" title="Modifier">
+                                        <a href="student_action.php?id=<?php echo $s['id']; ?>" class="table-action-btn" title="Modifier">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="delete_student.php?id=<?php echo $s['id']; ?>" class="table-action-btn delete" title="Supprimer" onclick="return confirm('Êtes-vous sûr?')">
+                                        <a href="student_action.php?id=<?php echo $s['id']; ?>&action=delete" class="table-action-btn delete" title="Supprimer">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
@@ -225,4 +230,3 @@ start_layout('Gestion des Étudiants', 'students');
 
 <?php end_layout(); ?>
 
-</div></body></html>

@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__.'/functions.php';
-require_once __DIR__.'/layout.php';
-require_once __DIR__.'/auth.php';
+require_once __DIR__.'/includes/functions.php';
+require_once __DIR__.'/includes/layout.php';
+require_once __DIR__.'/includes/auth.php';
 require_login();
 
 $levels = getLevels();
@@ -88,10 +88,10 @@ $classes = getClassesByLevel();
                   <a href="modules.php?class_id=<?= $c['id'] ?>" class="btn table-action-btn btn-sm btn-outline-success" title="Voir les modules">
                     <i class="bi bi-book"></i>
                   </a>
-                  <a href="edit_class.php?id=<?= $c['id'] ?>" class="btn table-action-btn btn-sm btn-outline-warning" title="Modifier">
+                  <a href="class_action.php?id=<?= $c['id'] ?>" class="btn table-action-btn btn-sm btn-outline-warning" title="Modifier">
                     <i class="bi bi-pencil"></i>
                   </a>
-                  <a href="delete_class.php?id=<?= $c['id'] ?>" class="btn table-action-btn btn-sm btn-outline-danger" title="Supprimer">
+                  <a href="class_action.php?id=<?= $c['id'] ?>&action=delete" class="btn table-action-btn btn-sm btn-outline-danger" title="Supprimer">
                     <i class="bi bi-trash"></i>
                   </a>
                 </td>
@@ -108,3 +108,4 @@ $classes = getClassesByLevel();
 </div>
 
 <?php end_layout(); ?>
+

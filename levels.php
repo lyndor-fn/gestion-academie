@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__.'/functions.php';
-require_once __DIR__.'/layout.php';
-require_once __DIR__.'/auth.php';
+require_once __DIR__.'/includes/functions.php';
+require_once __DIR__.'/includes/layout.php';
+require_once __DIR__.'/includes/auth.php';
 require_login();
 
 if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['name'])){
@@ -85,3 +85,4 @@ $levels = getLevels();
 </div>
 
 <?php end_layout(); ?>
+

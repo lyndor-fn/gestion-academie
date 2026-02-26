@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__.'/functions.php';
-require_once __DIR__.'/layout.php';
-require_once __DIR__.'/auth.php';
+require_once __DIR__.'/includes/functions.php';
+require_once __DIR__.'/includes/layout.php';
+require_once __DIR__.'/includes/auth.php';
 require_login();
 
 // Add evaluation by matricule or by student_id
@@ -139,6 +139,7 @@ if(isset($_GET['matricule'])) $student=getStudentByMatricule($_GET['matricule'])
           <table class="table table-hover mb-0">
             <thead>
               <tr>
+                <th>ID</th>
                 <th><i class="bi bi-book"></i> Module</th>
                 <th width="100">Type</th>
                 <th width="100">Score</th>
@@ -147,7 +148,11 @@ if(isset($_GET['matricule'])) $student=getStudentByMatricule($_GET['matricule'])
             </thead>
             <tbody>
               <?php foreach($evals as $ev): ?>
+                <?php $eval_id = 'EVAL-'.$student['matricule'].'-'.$ev['module_code'].'-'.$ev['type'].'-'.$ev['date_eval']; ?>
                 <tr>
+                  <td>
+                    <small class="text-muted"><?= e($eval_id) ?></small>
+                  </td>
                   <td>
                     <small class="text-muted"><?= e($ev['module_code']) ?></small><br>
                     <strong><?= e($ev['module_name']) ?></strong>
@@ -176,3 +181,4 @@ if(isset($_GET['matricule'])) $student=getStudentByMatricule($_GET['matricule'])
 <?php endif; ?>
 
 <?php end_layout(); ?>
+
