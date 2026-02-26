@@ -3,7 +3,6 @@ require_once __DIR__.'/includes/functions.php';
 require_once __DIR__.'/includes/auth.php';
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
-    if(!verify_csrf($_POST['csrf_token'] ?? '')){ die('CSRF token invalide'); }
     if(attempt_login($_POST['username'] ?? '', $_POST['password'] ?? '')){
         header('Location: index.php'); exit;
     } else {
@@ -37,7 +36,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
                 <label for="password">Mot de passe</label>
                 <input id="password" name="password" type="password" class="form-control" placeholder="Mot de passe" required>
             </div>
-            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
             <button class="btn btn-primary w-100">Se connecter</button>
         </form>
         <div class="login-footer text-muted">Compte par défaut: admin / admin123</div>

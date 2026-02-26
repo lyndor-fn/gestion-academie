@@ -15,12 +15,9 @@ if(isset($_GET['class_id'])) {
 }
 
 // Traiter l'ajout d'étudiant
-if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['firstname']) && !empty($_POST['lastname']) && !empty($_POST['class_id'])){
+if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['matricule']) && !empty($_POST['firstname']) && !empty($_POST['lastname']) && !empty($_POST['class_id'])){
     if(!verify_csrf($_POST['csrf_token'] ?? '')){ die('CSRF token invalide'); }
-    $matricule = generateStudentMatricule((int)$_POST['class_id']);
-    if ($matricule) {
-        addStudent($matricule, $_POST['firstname'], $_POST['lastname'], $_POST['class_id']);
-    }
+    addStudent($_POST['matricule'], $_POST['firstname'], $_POST['lastname'], $_POST['class_id']);
     header('Location: students.php?class_id='.$_POST['class_id']);
     exit;
 }
@@ -63,7 +60,6 @@ start_layout('Gestion des Étudiants', 'students');
 
 <!-- Formulaire d'ajout d'étudiant -->
 <?php if($class): ?>
-    <?php $next_matricule = generateStudentMatricule($class['id']); ?>
     <div class="card mb-4">
         <div class="card-header">
             <h5 class="card-title mb-0">
@@ -74,8 +70,7 @@ start_layout('Gestion des Étudiants', 'students');
             <form method="post" class="form-group-row">
                 <div class="form-group">
                     <label class="form-label required">Matricule</label>
-                    <input type="text" class="form-control" value="<?php echo e($next_matricule ?? ''); ?>" readonly>
-                    <small class="text-muted">Généré automatiquement.</small>
+                    <input type="text" name="matricule" class="form-control" placeholder="Matricule" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label required">Prénom</label>

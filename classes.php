@@ -7,9 +7,9 @@ require_login();
 $levels = getLevels();
 $filter_level_id = $_GET['level_id'] ?? null;
 
-if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['name']) && !empty($_POST['level_id'])){
+if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['name']) && !empty($_POST['level_id']) && !empty($_POST['code'])){
   if(!verify_csrf($_POST['csrf_token'] ?? '')){ die('CSRF token invalide'); }
-  addClass($_POST['level_id'], $_POST['name'], $_POST['code'] ?: uniqid('C_'));
+  addClass($_POST['level_id'], $_POST['name'], $_POST['code']);
   header('Location: classes.php'); 
   exit;
 }
@@ -36,7 +36,7 @@ $classes = getClassesByLevel();
         <input type="text" name="name" class="form-control form-control-sm" placeholder="Nom de la classe" required>
       </div>
       <div class="col-md-2">
-        <input type="text" name="code" class="form-control form-control-sm" placeholder="Code (optionnel)">
+        <input type="text" name="code" class="form-control form-control-sm" placeholder="Code" required>
       </div>
       <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
       <div class="col-md-2">

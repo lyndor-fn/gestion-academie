@@ -15,7 +15,7 @@ start_layout('Tableau de bord', 'dashboard');
     </div>
 </div>
 
-<!-- <div class="stats-grid mb-4">
+<div class="stats-grid mb-4">
     <div class="stat-card">
         <div class="stat-label">Niveaux</div>
         <div class="stat-value"><?= (int)$stats['nb_levels'] ?></div>
@@ -31,7 +31,7 @@ start_layout('Tableau de bord', 'dashboard');
         <div class="stat-value"><?= (int)$stats['nb_students'] ?></div>
         <div class="stat-meta">Inscrits</div>
     </div>
-</div> -->
+</div>
 
 <?php end_layout(); ?>
 

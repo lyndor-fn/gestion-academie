@@ -8,7 +8,6 @@ function csrf_token(){
     if(empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
     return $_SESSION['csrf_token'];
 }
-
 function verify_csrf($token){
     return !empty($token) && !empty($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
@@ -61,26 +60,6 @@ function getStudentsByClass($class_id){ global $pdo; $stmt=$pdo->prepare('SELECT
 
 function getStudentByMatricule($matricule){ global $pdo; $stmt=$pdo->prepare('SELECT * FROM students WHERE matricule=?'); $stmt->execute([$matricule]); return $stmt->fetch(PDO::FETCH_ASSOC); }
 
-function generateStudentMatricule($class_id){
-    $class = getClassWithLevel($class_id);
-    if (!$class) return null;
-
-    $level_code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $class['level_name']));
-    $class_code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $class['name']));
-    $year = date('Y');
-    $prefix = $level_code.$class_code.'-'.$year.'-';
-
-    $seq = 1;
-    do {
-        $matricule = $prefix.str_pad((string)$seq, 2, '0', STR_PAD_LEFT);
-        $exists = getStudentByMatricule($matricule);
-        $seq++;
-    } while ($exists);
-
-    return $matricule;
-}
-
-function generateModuleCode($class_id){
     global $pdo;
     $class = getClassWithLevel($class_id);
     if (!$class) return null;
@@ -105,7 +84,6 @@ function generateModuleCode($class_id){
 
     $next = $max + 1;
     return $prefix.str_pad((string)$next, 2, '0', STR_PAD_LEFT);
-}
 
 // EVALUATIONS
 function addEvaluation($student_id,$module_id,$type,$score,$date=null){ global $pdo; $stmt=$pdo->prepare('INSERT INTO evaluations (student_id,module_id,type,score,date_eval) VALUES (?,?,?,?,?)'); return $stmt->execute([$student_id,$module_id,$type,$score,$date ?: date('Y-m-d')]); }

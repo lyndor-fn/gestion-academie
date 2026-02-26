@@ -20,15 +20,9 @@ if (!function_exists('start_layout')) {
     <div class="app-wrapper" id="appWrapper">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon">GA</div>
                 <div class="sidebar-logo-text">Gestion Académique</div>
             </div>
             <ul class="sidebar-nav">
-                <li class="sidebar-nav-item">
-                    <a class="sidebar-nav-link <?= $current_page === 'dashboard' ? 'active' : '' ?>" href="index.php">
-                        <span class="sidebar-nav-text">Dashboard</span>
-                    </a>
-                </li>
                 <li class="sidebar-nav-item">
                     <a class="sidebar-nav-link <?= $current_page === 'levels' ? 'active' : '' ?>" href="levels.php">
                         <span class="sidebar-nav-text">Niveaux</span>

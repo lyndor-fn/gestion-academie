@@ -4,14 +4,11 @@ require_once __DIR__.'/includes/layout.php';
 require_once __DIR__.'/includes/auth.php';
 require_login();
 
-if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['name']) && !empty($_POST['class_id'])){
+if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['code']) && !empty($_POST['name']) && !empty($_POST['class_id'])){
   if(!verify_csrf($_POST['csrf_token'] ?? '')){ die('CSRF token invalide'); }
-  $module_code = generateModuleCode((int)$_POST['class_id']);
-  if ($module_code) {
-    $module_id = addModule($module_code, $_POST['name']); 
-    if ($module_id) {
-      assignModuleToClass($_POST['class_id'], $module_id);
-    }
+  $module_id = addModule($_POST['code'], $_POST['name']); 
+  if ($module_id) {
+    assignModuleToClass($_POST['class_id'], $module_id);
   }
   header('Location: modules.php?class_id='.$_POST['class_id']); 
   exit;
@@ -50,7 +47,10 @@ $all_modules = $pdo->query('SELECT * FROM modules ORDER BY code')->fetchAll(PDO:
           <?php endforeach; ?>
         </select>
       </div>
-      <div class="col-md-5">
+      <div class="col-md-3">
+        <input type="text" name="code" class="form-control form-control-sm" placeholder="Code du module" required>
+      </div>
+      <div class="col-md-3">
         <input type="text" name="name" class="form-control form-control-sm" placeholder="Nom du module" required>
       </div>
       <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
@@ -60,9 +60,6 @@ $all_modules = $pdo->query('SELECT * FROM modules ORDER BY code')->fetchAll(PDO:
         </button>
       </div>
     </form>
-    <?php if($class): ?>
-      <small class="text-muted">Code généré automatiquement: <?= e(generateModuleCode($class['id'])) ?></small>
-    <?php endif; ?>
   </div>
 </div>
 
